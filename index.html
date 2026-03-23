@@ -421,6 +421,18 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
           </div>
         </div>
       </div>
+      <div class="section">
+        <div class="sec-head"><div class="sec-title">Danger Zone</div></div>
+        <div class="ai-config">
+          <div style="font-size:11px;color:var(--text2);font-family:'Share Tech Mono',monospace;margin-bottom:10px;line-height:1.7">
+            Reset clears all XP, stats, quests, subjects, bosses, and daily logs.<br>
+            <span style="color:var(--danger)">This cannot be undone.</span>
+          </div>
+          <button onclick="confirmReset()" style="width:100%;padding:10px;background:var(--danger-dim);color:var(--danger);border:1px solid rgba(255,74,110,0.35);border-radius:9px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:.1em;cursor:pointer">
+            ⚠ RESET ALL DATA
+          </button>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -496,6 +508,34 @@ const STAT_META = {
   Awareness: {icon:'◎', color:'#ff9050'},
   Strategy:  {icon:'◆', color:'#4a7aff'},
 };
+
+// ── DATE HELPERS (always local timezone, never UTC) ──────────────────────
+function localDateStr(d) {
+  // Returns YYYY-MM-DD in the device's local timezone
+  const dt = d || new Date();
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,'0');
+  const day = String(dt.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+function todayStr() { return localDateStr(); }
+function scheduleMidnightReset() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24,0,0,0); // next midnight, local time
+  const ms = midnight - now;
+  setTimeout(() => {
+    resetDailyQuests();
+    scheduleMidnightReset(); // reschedule for next midnight
+  }, ms);
+  console.log('Midnight reset in', Math.round(ms/60000), 'min');
+}
+function resetDailyQuests() {
+  S.quests.forEach(q => { if(q.type === 'daily') q.done = false; });
+  saveState();
+  renderQuests();
+  showToast('New day — daily quests reset');
+}
 
 // Subject rank system: XP thresholds and labels
 const SUBJ_RANKS = [
@@ -664,11 +704,22 @@ async function syncToSheet() {
 // ===== STREAK =====
 function checkStreak() {
   if (!S.lastSealDate) return;
-  const last = new Date(S.lastSealDate);
-  const today = new Date();
+  // Compare using local YYYY-MM-DD strings to avoid UTC timezone bugs
+  const lastParts = S.lastSealDate.split('-').map(Number);
+  const last = new Date(lastParts[0], lastParts[1]-1, lastParts[2]);
+  const todayParts = todayStr().split('-').map(Number);
+  const today = new Date(todayParts[0], todayParts[1]-1, todayParts[2]);
   last.setHours(0,0,0,0); today.setHours(0,0,0,0);
   const diff = Math.round((today - last) / 86400000);
-  if (diff >= 2) { S.streak = 0; S.multiplier = 1.0; saveState(); showToast('Streak reset — '+diff+' days missed.'); }
+  if (diff >= 2) {
+    S.streak = 0; S.multiplier = 1.0; saveState();
+    showToast('Streak reset — '+diff+' days missed.');
+  } else if (diff === 1) {
+    // New day, reset dailies if they haven't been reset yet
+    const anyDone = S.quests.filter(q=>q.type==='daily').some(q=>q.done);
+    if (!anyDone) return; // already clean
+    // Don't reset here — midnight timer handles it
+  }
 }
 
 // ===== XP / LEVEL =====
@@ -853,11 +904,10 @@ async function endDay() {
   const r1=document.getElementById('r1').value.trim();
   const r2=document.getElementById('r2').value.trim();
   const r3=document.getElementById('r3').value.trim();
-  const today=new Date().toDateString();
-  const todayKey=new Date().toISOString().split('T')[0];
+  const todayKey = todayStr(); // local YYYY-MM-DD, never UTC
 
   // Prevent double-seal on same day
-  if(S.lastSealDate===today){
+  if(S.lastSealDate===todayKey){
     showToast('Already sealed today. Come back tomorrow.');
     return;
   }
@@ -876,7 +926,7 @@ async function endDay() {
   } else {
     S.streak=0; S.multiplier=1.0;
   }
-  S.lastSealDate=today;
+  S.lastSealDate=todayKey;
   S.xp+=bonus;
   if(bonus>0) S.xpLog.unshift({label:'Reflection bonus',xp:bonus,time:Date.now()});
 
@@ -901,7 +951,8 @@ async function endDay() {
   if(S.xpHistory.length>60) S.xpHistory.shift();
   if(S.statHistory.length>60) S.statHistory.shift();
 
-  // Reset daily quests
+  // Daily quests reset at midnight automatically (see scheduleMidnightReset)
+  // But also reset here when sealing, in case user seals late
   S.quests.forEach(q=>{if(q.type==='daily')q.done=false;});
   recalcLevel(); renderStats(); renderQuests();
   document.getElementById('streak-pill').textContent='🔥 '+S.streak+' day streak · ×'+S.multiplier.toFixed(1);
@@ -1316,6 +1367,34 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.getElementById('modal-overlay').classList.contains('open'))closeModal();
 });
 
+// ===== RESET =====
+function confirmReset() {
+  // Two-step confirm to prevent accidental wipes
+  const step1 = confirm('Reset ALL data? This cannot be undone.\n\nAll XP, stats, quests, subjects, bosses, and history will be deleted.');
+  if (!step1) return;
+  const step2 = confirm('Are you absolutely sure?\n\nType OK to confirm — this is permanent.');
+  if (!step2) return;
+  // Clear everything
+  try { localStorage.removeItem('arise-v4'); } catch(e) {}
+  try { localStorage.removeItem('arise-v3'); } catch(e) {}
+  try { localStorage.removeItem('arise-v2'); } catch(e) {}
+  try { localStorage.removeItem('arise-os'); } catch(e) {}
+  // Reset state to defaults
+  S = defaultState();
+  prevLevel = 1;
+  // Re-render everything
+  applyTheme('wolf');
+  recalcLevel();
+  renderStats();
+  renderQuests();
+  renderSubjects();
+  renderBosses();
+  document.getElementById('streak-pill').textContent = '🔥 0 day streak · ×1.0';
+  updateSysMsg();
+  saveState();
+  showToast('All data reset. Starting fresh.');
+}
+
 // ===== INIT =====
 (function repair(){
   const f=defaultState();
@@ -1347,6 +1426,7 @@ if(!localStorage.getItem('arise-sheet-url'))localStorage.setItem('arise-sheet-ur
 document.getElementById('sheet-url').value=SHEET_URL;
 
 setTimeout(loadFromCloud,900);
+scheduleMidnightReset(); // auto-reset daily quests at midnight
 </script>
 </body>
 </html>
