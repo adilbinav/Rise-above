@@ -1315,40 +1315,33 @@ function removeTyping() {
 }
 
 function escapeAndFormat(text) {
-  // Convert markdown-style formatting to HTML
-  let html = text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    // Headers
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
-    // Bold
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Italic
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Inline code
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    // Horizontal rule
-    .replace(/^---$/gm, '<hr>')
-    // Blockquote
-    .replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
-    // Unordered list
-    .replace(/^\* (.+)$/gm, '<li>$1</li>')
-    .replace(/^- (.+)$/gm, '<li>$1</li>')
-    // Numbered list
-    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-    // Wrap consecutive <li> in <ul>
-    .replace(/(<li>.*<\/li>
-?)+/g, m => '<ul>' + m + '</ul>')
-    // Paragraphs (double newline)
-    .replace(/
-
-/g, '</p><p>')
-    // Single newline
-    .replace(/
-/g, '<br>');
-  return '<p>' + html + '</p>';
+  let h = text
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+  const lines = h.split('\n');
+  const out = [];
+  let inList = false;
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    line = line.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    line = line.replace(/\*([^\*]+?)\*/g,'<em>$1</em>');
+    line = line.replace(/`([^`]+?)`/g,'<code>$1</code>');
+    if (/^### (.+)/.test(line)) { if(inList){out.push('</ul>');inList=false;} out.push('<h3>'+line.replace(/^###+ /,'')+'</h3>'); continue; }
+    if (/^## (.+)/.test(line))  { if(inList){out.push('</ul>');inList=false;} out.push('<h3>'+line.replace(/^##+ /,'')+'</h3>'); continue; }
+    if (/^---$/.test(line))     { if(inList){out.push('</ul>');inList=false;} out.push('<hr>'); continue; }
+    if (/^&gt; (.+)/.test(line)){ if(inList){out.push('</ul>');inList=false;} out.push('<blockquote>'+line.replace(/^&gt; /,'')+'</blockquote>'); continue; }
+    if (/^[\*\-] (.+)/.test(line) || /^\d+\. (.+)/.test(line)) {
+      if(!inList){ out.push('<ul>'); inList=true; }
+      out.push('<li>'+line.replace(/^[\*\-] /,'').replace(/^\d+\. /,'')+'</li>');
+      continue;
+    }
+    if (inList) { out.push('</ul>'); inList=false; }
+    if (line.trim() === '') { out.push('<br>'); } else { out.push('<p>'+line+'</p>'); }
+  }
+  if (inList) out.push('</ul>');
+  return out.join('');
 }
-
 function buildSystemPrompt() {
   const questsDone = S.quests.filter(q=>q.done).length;
   const totalSessions = S.subjects.reduce((a,s)=>a+s.sessions,0);
@@ -1619,6 +1612,17 @@ document.addEventListener('keydown',e=>{
 });
 
 // ===== INIT =====
+// Auto-repair: if quests/subjects/bosses are empty (corrupted save), inject defaults
+(function repairState() {
+  const fresh = defaultState();
+  let repaired = false;
+  if (!S.quests || S.quests.length === 0) { S.quests = fresh.quests; repaired = true; }
+  if (!S.subjects || S.subjects.length === 0) { S.subjects = fresh.subjects; repaired = true; }
+  if (!S.bosses || S.bosses.length === 0) { S.bosses = fresh.bosses; repaired = true; }
+  if (!S.stats || Object.keys(S.stats).length === 0) { S.stats = fresh.stats; repaired = true; }
+  if (repaired) { try { localStorage.setItem('arise-v2', JSON.stringify(S)); } catch(e){} }
+})();
+
 applyTheme(S.theme||'wolf');
 checkStreak();
 recalcLevel();
