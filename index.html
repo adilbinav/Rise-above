@@ -629,7 +629,10 @@ body::before {
     </div>
     <div class="header-row3">
       <div class="streak-pill" id="streak-pill">🔥 0 day streak · ×1.0</div>
-      <div class="sys-msg" id="sys-msg" onclick="updateSysMsg()">"Begin."</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div id="sync-dot" style="width:6px;height:6px;border-radius:50%;background:var(--success);opacity:0;transition:opacity .4s;flex-shrink:0;"></div>
+        <div class="sys-msg" id="sys-msg" onclick="updateSysMsg()">"Begin."</div>
+      </div>
     </div>
   </div>
 
@@ -724,8 +727,10 @@ body::before {
           <div class="backend-row">
             <input class="backend-input" id="sheet-url" placeholder="https://script.google.com/macros/s/…">
             <button class="ai-save-btn" onclick="saveSheetUrl()">Save</button>
-            <button class="sync-btn" id="sync-btn" onclick="syncToSheet()">Sync</button>
+            <button class="sync-btn" id="sync-btn" onclick="syncToSheet()">Push</button>
+            <button class="sync-btn" onclick="loadFromCloud()" style="background:rgba(61,220,132,0.1);color:var(--success);border-color:rgba(61,220,132,0.2);">Pull</button>
           </div>
+          <div id="cloud-status" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px;"></div>
         </div>
       </div>
 
@@ -958,6 +963,70 @@ function loadState() {
 }
 function saveState() {
   try { localStorage.setItem('arise-v3', JSON.stringify(S)); } catch(e){}
+  pushToCloud();
+}
+
+let pushTimer = null;
+function pushToCloud() {
+  // Debounce — wait 1.5s after last change before pushing
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(async () => {
+    const url = localStorage.getItem('arise-sheet-url') || SHEET_URL;
+    if (!url) return;
+    try {
+      await fetch(url, {
+        method: 'POST', mode: 'no-cors',
+        body: JSON.stringify({ action: 'save', state: S }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      showSyncDot('green');
+    } catch(e) { showSyncDot('red'); }
+  }, 1500);
+}
+
+function showSyncDot(color) {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.style.background = color === 'green' ? 'var(--success)' : 'var(--danger)';
+  dot.style.opacity = '1';
+  setTimeout(() => dot.style.opacity = '0', 2000);
+}
+
+async function loadFromCloud() {
+  const url = localStorage.getItem('arise-sheet-url') || SHEET_URL;
+  if (!url) return;
+  const statusEl = document.getElementById('cloud-status');
+  if (statusEl) statusEl.textContent = 'Syncing…';
+  try {
+    const res = await fetch(url + '?t=' + Date.now());
+    const data = await res.json();
+    if (data.status === 'ok' && data.state) {
+      const cloud = data.state;
+      // Only load from cloud if cloud data is newer (higher XP or level)
+      if ((cloud.xp || 0) > S.xp || (cloud.level || 1) > S.level) {
+        S = cloud;
+        try { localStorage.setItem('arise-v3', JSON.stringify(S)); } catch(e){}
+        prevLevel = S.level;
+        applyTheme(S.theme || 'wolf');
+        recalcLevel();
+        renderStats();
+        renderQuests();
+        renderSubjects();
+        renderBosses();
+        document.getElementById('streak-pill').textContent = '🔥 ' + S.streak + ' day streak · ×' + S.multiplier.toFixed(1);
+        if (statusEl) statusEl.textContent = 'Synced from cloud ✓';
+        showToast('Data loaded from cloud ✓');
+      } else {
+        if (statusEl) statusEl.textContent = 'Local data is current';
+      }
+      showSyncDot('green');
+    } else {
+      if (statusEl) statusEl.textContent = data.status === 'empty' ? 'No cloud data yet' : 'Sync error';
+    }
+  } catch(e) {
+    if (statusEl) statusEl.textContent = 'Offline — using local data';
+    showSyncDot('red');
+  }
 }
 
 // ===== STREAK AUTO-CALCULATION =====
@@ -1630,6 +1699,8 @@ renderStats();
 renderQuests();
 renderSubjects();
 renderBosses();
+// Load from cloud on startup (will update if cloud is newer)
+setTimeout(loadFromCloud, 800);
 document.getElementById('streak-pill').textContent='🔥 '+S.streak+' day streak · ×'+S.multiplier.toFixed(1);
 updateSysMsg();
 
