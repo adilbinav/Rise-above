@@ -932,7 +932,7 @@ let xpChartInst = null, statsChartInst = null, subjectsChartInst = null;
 
 function loadState() {
   try {
-    const r = localStorage.getItem('arise-v2');
+    const r = localStorage.getItem('arise-v3');
     if(r) {
       const parsed = JSON.parse(r);
       // Validate — if quests array is missing or empty, reset to defaults
@@ -957,7 +957,7 @@ function loadState() {
   return defaultState();
 }
 function saveState() {
-  try { localStorage.setItem('arise-v2', JSON.stringify(S)); } catch(e){}
+  try { localStorage.setItem('arise-v3', JSON.stringify(S)); } catch(e){}
 }
 
 // ===== STREAK AUTO-CALCULATION =====
@@ -1620,7 +1620,7 @@ document.addEventListener('keydown',e=>{
   if (!S.subjects || S.subjects.length === 0) { S.subjects = fresh.subjects; repaired = true; }
   if (!S.bosses || S.bosses.length === 0) { S.bosses = fresh.bosses; repaired = true; }
   if (!S.stats || Object.keys(S.stats).length === 0) { S.stats = fresh.stats; repaired = true; }
-  if (repaired) { try { localStorage.setItem('arise-v2', JSON.stringify(S)); } catch(e){} }
+  if (repaired) { try { localStorage.setItem('arise-v3', JSON.stringify(S)); } catch(e){} }
 })();
 
 applyTheme(S.theme||'wolf');
