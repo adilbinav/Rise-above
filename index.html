@@ -931,7 +931,29 @@ let modalMode = '';
 let xpChartInst = null, statsChartInst = null, subjectsChartInst = null;
 
 function loadState() {
-  try { const r = localStorage.getItem('arise-v2'); if(r) return JSON.parse(r); } catch(e){}
+  try {
+    const r = localStorage.getItem('arise-v2');
+    if(r) {
+      const parsed = JSON.parse(r);
+      // Validate — if quests array is missing or empty, reset to defaults
+      if(!parsed.quests || parsed.quests.length === 0) {
+        const fresh = defaultState();
+        parsed.quests = fresh.quests;
+      }
+      if(!parsed.subjects || parsed.subjects.length === 0) {
+        const fresh = defaultState();
+        parsed.subjects = fresh.subjects;
+      }
+      if(!parsed.bosses || parsed.bosses.length === 0) {
+        const fresh = defaultState();
+        parsed.bosses = fresh.bosses;
+      }
+      if(!parsed.stats) parsed.stats = defaultState().stats;
+      return parsed;
+    }
+  } catch(e){ console.warn('State load failed, using defaults:', e); }
+  // Also clear any old v1 key to avoid confusion
+  try { localStorage.removeItem('arise-os'); } catch(e){}
   return defaultState();
 }
 function saveState() {
