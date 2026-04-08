@@ -6,434 +6,879 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0a0a0f">
-<title>ARISE — Life OS</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>ARISE — ADHD Optimized</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:#060810;color:#d8e8ff;font-family:'Exo 2',sans-serif;height:100%;overflow:hidden}
-:root{--bg:#060810;--bg2:#0d1018;--bg3:#131820;--bg4:#1a2030;--border:rgba(80,120,220,0.15);--border2:rgba(80,140,255,0.25);--accent:#4a7aff;--accent2:#7aaaff;--accent-dim:rgba(74,122,255,0.12);--gold:#c8a84b;--gold2:#e8d080;--danger:#ff4a6e;--success:#3ddc84;--purple:#9060ff;--text:#d8e8ff;--text2:#8098c0;--text3:#405070}
-.theme-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background-size:cover;background-position:center;opacity:0.03;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ctext x='50%25' y='55%25' font-size='160' text-anchor='middle' dominant-baseline='middle' fill='white'%3E⚡%3C/text%3E%3C/svg%3E")}
-.corner{position:fixed;width:18px;height:18px;z-index:9980;pointer-events:none}
-.corner-tl{top:10px;left:10px;border-top:1.5px solid var(--accent);border-left:1.5px solid var(--accent)}
-.corner-tr{top:10px;right:10px;border-top:1.5px solid var(--accent);border-right:1.5px solid var(--accent)}
-.corner-bl{bottom:62px;left:10px;border-bottom:1.5px solid var(--accent);border-left:1.5px solid var(--accent)}
-.corner-br{bottom:62px;right:10px;border-bottom:1.5px solid var(--accent);border-right:1.5px solid var(--accent)}
-#app{height:100dvh;display:flex;flex-direction:column;position:relative;z-index:1}
-.header{flex-shrink:0;padding:10px 14px 8px;background:rgba(6,8,16,0.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
-.header-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#060810;color:#d8e8ff;font-family:'Exo 2',sans-serif;height:100vh;overflow:hidden}
+:root{--bg:#060810;--bg2:#0d1018;--bg3:#131820;--bg4:#1a2030;--border:rgba(80,120,220,0.15);--accent:#4a7aff;--accent2:#7aaaff;--gold:#c8a84b;--gold2:#e8d080;--danger:#ff4a6e;--success:#3ddc84;--purple:#9060ff;--text:#d8e8ff;--text2:#8098c0;--text3:#405070}
+
+/* ADHD-FRIENDLY ANIMATIONS */
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+@keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(360deg);opacity:0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes glow{0%,100%{box-shadow:0 0 5px var(--gold)}50%{box-shadow:0 0 20px var(--gold)}}
+@keyframes stampPop{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+.header{background:rgba(6,8,16,0.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 14px 8px}
+.header-row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
 .player-left{display:flex;align-items:center;gap:10px}
-.avatar{width:44px;height:44px;border-radius:50%;border:2px solid var(--gold);background:linear-gradient(135deg,var(--bg3),var(--bg4));display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
-.player-name{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:.06em}
-.player-rank{font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-top:2px}
-.header-right{display:flex;align-items:center;gap:7px}
-.level-badge{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;background:var(--gold-dim);color:var(--gold2);border:1px solid rgba(200,168,75,0.3)}
-.mute-btn{width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer}
-.xp-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.xp-bar-wrap{flex:1;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
-.xp-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .6s}
-.xp-text{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--gold)}
-.header-row3{display:flex;align-items:center;justify-content:space-between}
-.streak-pill{font-family:'Share Tech Mono',monospace;font-size:11px;background:rgba(255,120,40,0.1);color:#ff9050;border:1px solid rgba(255,120,40,0.2);border-radius:20px;padding:2px 10px;cursor:pointer}
-#sync-dot{width:6px;height:6px;border-radius:50%;background:var(--success);opacity:0}
-.sys-msg{font-size:10px;color:var(--accent2);font-family:'Share Tech Mono',monospace;font-style:italic;opacity:.8;cursor:pointer}
-.stats-row{flex-shrink:0;display:flex;gap:5px;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
-.stat-pill{flex-shrink:0;display:flex;flex-direction:column;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 8px;min-width:54px;cursor:pointer}
-.stat-icon{font-size:12px}.stat-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text3)}.stat-val{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700}
-.weekly-bar-wrap{flex-shrink:0;padding:5px 12px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
-.weekly-track{flex:1;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
-.weekly-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--accent));transition:width .6s}
+.avatar{width:44px;height:44px;border-radius:50%;border:2px solid var(--gold);background:linear-gradient(135deg,var(--bg3),var(--bg4));display:flex;align-items:center;justify-content:center;font-size:22px}
+.player-name{font-family:'Rajdhani';font-weight:700}
+.player-rank{font-size:9px;color:var(--text3);font-family:'Share Tech Mono'}
+.level-badge{font-family:'Rajdhani';font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(200,168,75,0.15);color:var(--gold2)}
+
+/* XP DASHBOARD - VISUAL PROGRESS */
+.xp-dashboard{background:linear-gradient(135deg,var(--bg3),var(--bg4));border-radius:16px;padding:12px;margin:8px 12px;border:1px solid var(--border)}
+.stamp-track{display:flex;gap:6px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+.stamp{width:36px;height:36px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;transition:all 0.2s}
+.stamp.earned{background:linear-gradient(135deg,var(--gold),#ffd700);color:#000;transform:scale(1.05);box-shadow:0 0 15px rgba(200,168,75,0.6);animation:stampPop 0.3s ease}
+.xp-now{display:flex;align-items:baseline;justify-content:center;gap:5px;margin-bottom:8px}
+.xp-big-number{font-family:'Rajdhani';font-size:48px;font-weight:800;color:var(--gold2);line-height:1}
+.xp-goal{font-size:14px;color:var(--text3)}
+.next-milestone{text-align:center;font-size:11px;color:var(--accent2);margin-top:8px;animation:pulse 1.5s infinite}
+.progress-ring-container{display:flex;justify-content:center;margin-top:8px}
+canvas#xpRing{width:70px;height:70px}
+
+/* QUEST CARDS */
+.quest-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s}
+.quest-card:active{transform:scale(0.98)}
+.quest-card.done{opacity:0.5}
+.q-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px}
+.quest-card.done .q-check{background:var(--success);border-color:var(--success);color:#000}
+.q-body{flex:1}
+.quest-name{font-size:14px;font-weight:500}
+.q-xp{font-family:'Rajdhani';font-weight:700;color:var(--gold);font-size:16px}
+.q-delete{color:var(--text3);cursor:pointer;padding:0 6px;opacity:0}
+.quest-card:hover .q-delete{opacity:0.6}
+
+/* COUNTDOWN TIMER */
+.countdown-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:1000;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.countdown-number{font-family:'Rajdhani';font-size:120px;font-weight:800;color:var(--gold2);animation:pulse 0.5s infinite}
+.countdown-cancel{position:absolute;bottom:100px;padding:12px 24px;background:var(--bg3);border:1px solid var(--border);border-radius:30px;cursor:pointer}
+
+/* FLOATING XP */
+.xp-float{position:fixed;z-index:2000;font-family:'Rajdhani';font-size:24px;font-weight:800;color:var(--gold2);pointer-events:none;animation:floatUp 0.8s ease-out forwards;text-shadow:0 0 10px rgba(200,168,75,0.5)}
+
+/* BODY DOUBLE BAR */
+.body-double-bar{background:rgba(74,122,255,0.1);padding:6px 12px;margin:0 12px 8px;border-radius:20px;text-align:center;font-size:11px;font-family:'Share Tech Mono';border:1px solid rgba(74,122,255,0.2)}
+
+/* SCREW IT BUTTON */
+.screw-it-btn{background:rgba(255,74,110,0.15);border:1px solid rgba(255,74,110,0.3);border-radius:20px;padding:4px 12px;font-size:10px;color:var(--danger);cursor:pointer;margin-left:8px}
+
+/* STATS */
+.stats-row{display:flex;gap:5px;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
+.stat-pill{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 8px;min-width:54px;text-align:center}
+.stat-lbl{font-family:'Share Tech Mono';font-size:8px;color:var(--text3)}
+.stat-val{font-family:'Rajdhani';font-size:14px;font-weight:700}
+
+/* WEEKLY */
+.weekly-bar-wrap{display:flex;gap:8px;align-items:center;padding:5px 12px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.weekly-track{flex:1;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.weekly-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--accent));transition:width 0.3s}
+
+/* PANELS */
+.panel{display:none}
+.panel.active{display:block}
 .main-scroll{flex:1;overflow-y:auto;padding:12px}
-.main-scroll::-webkit-scrollbar{width:2px}
-.section{margin-bottom:16px}
-.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.sec-title{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--text2)}
-.sec-title::before{content:'//';color:var(--accent);font-family:'Share Tech Mono',monospace}
-.sec-action{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);background:var(--accent-dim);border:1px solid rgba(74,122,255,0.2);border-radius:6px;padding:3px 10px;cursor:pointer}
-.quest-card{background:rgba(19,24,32,0.8);backdrop-filter:blur(4px);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px;cursor:pointer}
-.quest-card::before{content:'';position:absolute;left:0;width:3px;height:100%;border-radius:3px 0 0 3px}
-.quest-card.q-daily::before{background:var(--accent)}
-.quest-card.done{opacity:.5}
-.quest-card.done .quest-name{text-decoration:line-through}
-.q-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center}
-.quest-card.done .q-check{background:var(--success);border-color:var(--success);color:var(--bg)}
-.q-body{flex:1}.quest-name{font-size:13px;font-weight:500}
-.q-xp{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--gold)}
-.q-delete,.q-edit{font-size:12px;color:var(--text3);cursor:pointer;padding:0 4px;opacity:0}
-.quest-card:hover .q-delete,.quest-card:hover .q-edit{opacity:.6}
-.empty-state{text-align:center;padding:24px;color:var(--text3);font-size:11px}
-.panel{display:none}.panel.active{display:block}
-.bottom-nav{flex-shrink:0;display:flex;background:var(--bg2);border-top:1px solid var(--border)}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px 6px;cursor:pointer;background:transparent;border:none}
+.bottom-nav{display:flex;background:var(--bg2);border-top:1px solid var(--border)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;background:transparent;border:none;cursor:pointer}
 .nav-btn.active{background:var(--bg3);border-top:1px solid var(--accent)}
-.nav-icon{font-size:16px}.nav-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text3)}
-.nav-btn.active .nav-lbl{color:var(--accent2)}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:flex-end;opacity:0;pointer-events:none}
+.nav-icon{font-size:16px}
+.nav-lbl{font-family:'Share Tech Mono';font-size:8px;color:var(--text3)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;display:flex;align-items:flex-end;opacity:0;pointer-events:none}
 .modal-overlay.open{opacity:1;pointer-events:all}
-.modal{background:var(--bg2);border-top:1px solid var(--border2);border-radius:18px 18px 0 0;padding:16px;width:100%;transform:translateY(100%);transition:transform .28s;max-height:80vh;overflow-y:auto}
+.modal{background:var(--bg2);border-radius:18px 18px 0 0;padding:20px;width:100%;transform:translateY(100%);transition:transform 0.28s}
 .modal-overlay.open .modal{transform:translateY(0)}
-.modal-title{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px}
-.modal input,.modal select,.modal textarea{width:100%;padding:8px 11px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text);margin-bottom:8px}
-.stat-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
-.stat-chip{padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer}
-.stat-chip.selected{background:var(--accent-dim);color:var(--accent2);border-color:var(--accent)}
-.modal-btns{display:flex;gap:8px;margin-top:4px}
-.m-cancel,.m-confirm{flex:1;height:40px;border-radius:8px;font-family:'Rajdhani',sans-serif;font-weight:600;cursor:pointer}
-.m-cancel{background:var(--bg4);border:1px solid var(--border2);color:var(--text2)}
-.m-confirm{background:var(--accent-dim);border:1px solid rgba(74,122,255,0.3);color:var(--accent2)}
-.toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:6px 16px;font-size:11px;color:var(--gold2);z-index:600;opacity:0;transition:opacity .2s;pointer-events:none}
+.modal input,.modal select{width:100%;padding:10px;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:#fff;margin-bottom:10px}
+
+/* TOAST */
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:8px 20px;font-size:12px;color:var(--gold2);z-index:600;opacity:0;transition:opacity 0.2s}
 .toast.show{opacity:1}
-.lvlup{position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:700;opacity:0;pointer-events:none}
-.lvlup.show{opacity:1;pointer-events:all}
-.lvlup-num{font-family:'Rajdhani',sans-serif;font-size:88px;font-weight:700;color:var(--gold2);animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{text-shadow:0 0 30px rgba(200,168,75,.4)}50%{text-shadow:0 0 70px rgba(200,168,75,.8)}}
-.chat-fab{position:fixed;bottom:76px;right:14px;z-index:800;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));border:none;cursor:pointer;font-size:20px;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
-.chat-window{position:fixed;bottom:76px;right:14px;z-index:799;width:calc(100vw - 28px);max-width:420px;height:70vh;background:var(--bg2);border:1px solid var(--border2);border-radius:18px;display:flex;flex-direction:column;transform:scale(0.85);opacity:0;pointer-events:none;transition:all .25s}
-.chat-window.open{transform:scale(1);opacity:1;pointer-events:all}
-.chat-header{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--border);background:var(--bg3)}
-.chat-messages{flex:1;overflow-y:auto;padding:11px;display:flex;flex-direction:column;gap:9px}
-.chat-msg{display:flex;gap:7px}.chat-msg.user{flex-direction:row-reverse}
-.chat-bubble{max-width:84%;padding:9px 12px;border-radius:13px;font-size:13px}
-.chat-msg.user .chat-bubble{background:var(--accent-dim)}
-.chat-msg.ai .chat-bubble{background:var(--bg4);border:1px solid var(--border)}
-.chat-input-row{display:flex;gap:7px;padding:9px 11px;border-top:1px solid var(--border);background:var(--bg3)}
-.chat-textarea{flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:10px;padding:7px 10px;color:var(--text);resize:none;font-family:'Exo 2',sans-serif}
-.chat-send-btn{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));border:none;cursor:pointer}
-.login-overlay{position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{background:var(--bg2);border:1px solid var(--border2);border-radius:24px;padding:32px 24px;width:100%;max-width:380px}
-.login-title{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;text-align:center;color:var(--accent2);margin-bottom:8px}
-.login-input{width:100%;height:44px;padding:0 14px;background:var(--bg4);border:1px solid var(--border2);border-radius:10px;color:var(--text);margin-bottom:12px}
-.login-btn{width:100%;height:46px;background:linear-gradient(135deg,var(--accent-dim),var(--purple-dim));border:1px solid rgba(74,122,255,0.3);border-radius:12px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent2);cursor:pointer;margin-bottom:12px}
-.login-switch{text-align:center;font-size:12px;color:var(--text3);cursor:pointer}
-.login-switch span{color:var(--accent2)}
-.reflect-ta{width:100%;min-height:64px;padding:9px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text);margin-bottom:12px}
-.seal-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent-dim),var(--purple-dim));border:1px solid rgba(74,122,255,0.3);border-radius:12px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent2);cursor:pointer}
-.ai-config{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:8px}
-.setting-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.volume-slider{width:120px}
+
+/* REFLECTION */
+.reflect-ta{width:100%;min-height:70px;padding:10px;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:#fff;margin-bottom:12px;resize:vertical}
+.seal-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--purple));border:none;border-radius:12px;font-weight:700;color:#fff;cursor:pointer;font-size:16px}
+.seal-btn:disabled{opacity:0.5}
+
+/* LOGIN */
+.login-overlay{position:fixed;inset:0;background:#060810;z-index:2000;display:flex;align-items:center;justify-content:center}
+.login-card{background:var(--bg2);border:1px solid var(--border);border-radius:24px;padding:32px;width:100%;max-width:360px}
+.login-title{font-family:'Rajdhani';font-size:28px;font-weight:700;text-align:center;color:var(--accent);margin-bottom:24px}
+.login-input{width:100%;height:44px;padding:0 14px;background:var(--bg4);border:1px solid var(--border);border-radius:10px;color:#fff;margin-bottom:12px}
+.login-btn{width:100%;height:46px;background:var(--accent);border:none;border-radius:12px;font-weight:700;color:#fff;cursor:pointer}
+.login-switch{text-align:center;margin-top:12px;font-size:12px;color:var(--text3);cursor:pointer}
+.login-switch span{color:var(--accent)}
+
+.empty-state{text-align:center;padding:30px;color:var(--text3);font-size:12px}
+#syncDot{width:8px;height:8px;border-radius:50%;background:#ff9050;transition:all 0.3s}
+#syncDot.synced{background:var(--success);box-shadow:0 0 8px var(--success)}
 </style>
 </head>
 <body>
 
-<div class="theme-bg"></div>
-<div class="corner corner-tl"></div><div class="corner corner-tr"></div>
-<div class="corner corner-bl"></div><div class="corner corner-br"></div>
-
-<!-- LOGIN SCREEN -->
-<div class="login-overlay" id="login-overlay">
+<div class="login-overlay" id="loginOverlay">
   <div class="login-card">
     <div class="login-title">ARISE</div>
-    <div class="login-sub" style="text-align:center; font-size:12px; color:var(--text2); margin-bottom:24px">Sign in to continue your journey</div>
-    <form onsubmit="return false">
-      <input type="email" class="login-input" id="login-email" placeholder="Email">
-      <input type="password" class="login-input" id="login-password" placeholder="Password">
-    </form>
-    <button class="login-btn" id="login-btn">SIGN IN</button>
-    <div class="login-switch" id="login-switch">New here? <span>Create account</span></div>
-    <div class="login-error" id="login-error" style="color:var(--danger); font-size:11px; text-align:center; margin-top:12px"></div>
+    <input type="email" class="login-input" id="loginEmail" placeholder="Email">
+    <input type="password" class="login-input" id="loginPassword" placeholder="Password">
+    <button class="login-btn" id="loginBtn">SIGN IN</button>
+    <div class="login-switch" id="loginSwitch">New here? <span>Create account</span></div>
+    <div id="loginError" style="color:#ff4a6e; font-size:11px; text-align:center; margin-top:12px"></div>
   </div>
 </div>
 
-<!-- MAIN APP -->
-<div id="app" style="display:none">
+<div id="app" style="display:none; height:100vh; display:flex; flex-direction:column">
   <div class="header">
     <div class="header-row1">
       <div class="player-left">
         <div class="avatar" id="avatar">⚔️</div>
-        <div>
-          <div class="player-name" id="player-name">SEEKER</div>
-          <div class="player-rank" id="player-rank">RANK E · AWAKENING</div>
-        </div>
+        <div><div class="player-name" id="playerName">SEEKER</div><div class="player-rank" id="playerRank">RANK E</div></div>
       </div>
-      <div class="header-right">
-        <div class="level-badge" id="level-badge">LVL 1</div>
-        <div class="mute-btn" id="mute-btn" onclick="window.toggleMute()">🔊</div>
-      </div>
-    </div>
-    <div class="xp-row">
-      <div class="xp-bar-wrap"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
-      <div class="xp-text" id="xp-text">0 / 500</div>
-    </div>
-    <div class="header-row3">
-      <div class="streak-pill" id="streak-pill" onclick="window.showStreakInfo()">🔥 0 day streak · ×1.0</div>
-      <div class="header-right-row" style="display:flex; gap:6px">
-        <div id="sync-dot"></div>
-        <div class="sys-msg" id="sys-msg" onclick="window.updateSysMsg()">"Begin."</div>
-      </div>
+      <div><div class="level-badge" id="levelBadge">LVL 1</div></div>
     </div>
   </div>
 
-  <div class="stats-row" id="stats-row"></div>
-  <div class="weekly-bar-wrap">
-    <div class="weekly-lbl">WEEKLY</div>
-    <div class="weekly-track"><div class="weekly-fill" id="weekly-fill" style="width:0%"></div></div>
-    <div class="weekly-pct" id="weekly-pct">0 / 500 XP</div>
+  <!-- ADHD VISUAL XP DASHBOARD -->
+  <div class="xp-dashboard">
+    <div class="stamp-track" id="stampTrack"></div>
+    <div class="xp-now">
+      <span class="xp-big-number" id="todayXP">0</span>
+      <span class="xp-goal">/ 500 XP</span>
+    </div>
+    <div class="progress-ring-container">
+      <canvas id="xpRing" width="70" height="70"></canvas>
+    </div>
+    <div class="next-milestone" id="nextMilestone">⚡ Complete a quest to earn XP!</div>
   </div>
 
-  <div class="main-scroll" id="main-scroll">
-    <div class="panel active" id="panel-quests">
-      <div class="section"><div class="sec-head"><div class="sec-title">Daily Quests</div><div class="sec-action" onclick="window.openModal('quest')">+ Add</div></div><div id="quest-list-daily"></div></div>
-      <div class="section"><div class="sec-head"><div class="sec-title">Main & Chaos</div><div class="sec-action" onclick="window.openModal('quest')">+ Add</div></div><div id="quest-list-other"></div></div>
-      <div class="section"><div class="sec-head"><div class="sec-title">Persistent Goals</div><div class="sec-action" onclick="window.openModal('quest-persistent')">+ Goal</div></div><div id="quest-list-persistent"></div></div>
+  <!-- BODY DOUBLE - Shows others focusing -->
+  <div class="body-double-bar" id="bodyDoubleBar">👥 Loading focus partners...</div>
+
+  <div class="stats-row" id="statsRow"></div>
+  <div class="weekly-bar-wrap"><div class="weekly-lbl">WEEKLY</div><div class="weekly-track"><div class="weekly-fill" id="weeklyFill"></div></div><div class="weekly-pct" id="weeklyPct">0 / 500 XP</div></div>
+
+  <div class="main-scroll" id="mainScroll">
+    <div class="panel active" id="panelQuests">
+      <div class="section"><div class="sec-head"><div class="sec-title">⚡ DO THIS NOW</div><div class="sec-action" onclick="openModal('quest')">+ Add Quest</div></div><div id="dailyQuests"></div></div>
+      <div class="section"><div class="sec-head"><div class="sec-title">🎯 MAIN QUESTS</div><div class="sec-action" onclick="openModal('quest')">+ Add</div></div><div id="otherQuests"></div></div>
     </div>
-    <div class="panel" id="panel-subjects"><div class="section"><div class="sec-head"><div class="sec-title">Subjects</div><div class="sec-action" onclick="window.openModal('subject')">+ Add</div></div><div id="subject-list"></div></div></div>
-    <div class="panel" id="panel-boss"><div class="section"><div class="sec-head"><div class="sec-title">Boss Fights</div><div class="sec-action" onclick="window.openModal('boss')">+ Add</div></div><div id="boss-list"></div></div></div>
-    <div class="panel" id="panel-analytics"><div class="section"><div class="sec-head"><div class="sec-title">Life Dashboard</div></div><div id="analytics-grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:16px"></div><canvas id="xp-chart" style="max-height:200px"></canvas></div></div>
-    <div class="panel" id="panel-fitness"><div id="fitness-container"></div></div>
-    <div class="panel" id="panel-reflect"><div class="section"><div class="sec-head"><div class="sec-title">End of Day Reflection</div></div><textarea class="reflect-ta" id="reflection-win" placeholder="What was your most important win today?"></textarea><textarea class="reflect-ta" id="reflection-slip" placeholder="Where did discipline slip, and why?"></textarea><textarea class="reflect-ta" id="reflection-tomorrow" placeholder="What is the one thing tomorrow needs?"></textarea><button class="seal-btn" onclick="window.endDay()">⬡ SEAL TODAY'S LOG</button><div id="reflect-feedback" class="reflect-feedback" style="margin-top:12px"></div></div></div>
-    <div class="panel" id="panel-settings"><div id="settings-container"></div></div>
+    <div class="panel" id="panelReflect">
+      <div class="section"><div class="sec-head"><div class="sec-title">📝 END OF DAY</div></div>
+      <textarea class="reflect-ta" id="reflection1" placeholder="What was your biggest win today? (even small ones count)"></textarea>
+      <textarea class="reflect-ta" id="reflection2" placeholder="What got in the way? No shame, just data."></textarea>
+      <textarea class="reflect-ta" id="reflection3" placeholder="One thing for tomorrow?"></textarea>
+      <button class="seal-btn" id="sealBtn" onclick="sealDay()">⬡ SEAL TODAY'S LOG</button>
+      <div id="reflectionFeedback" style="margin-top:12px"></div>
+    </div>
+    <div class="panel" id="panelSettings">
+      <div class="section"><div class="sec-head"><div class="sec-title">⚙️ SETTINGS</div></div>
+      <div style="background:var(--bg3); border-radius:12px; padding:12px">
+        <input type="password" id="geminiKeyInput" placeholder="Gemini API Key (optional)" style="width:100%; padding:10px; background:var(--bg4); border:1px solid var(--border); border-radius:8px; color:#fff; margin-bottom:12px">
+        <button class="sec-action" onclick="saveGeminiKey()" style="width:100%; margin-bottom:12px">💾 Save API Key</button>
+        <button class="sec-action" onclick="syncToCloud()" style="width:100%; margin-bottom:12px">☁️ Sync Now</button>
+        <button class="sec-action" onclick="signOut()" style="width:100%; background:rgba(255,74,110,0.2); color:#ff4a6e">🚪 Sign Out</button>
+      </div>
+    </div>
   </div>
 
   <div class="bottom-nav">
-    <button class="nav-btn active" onclick="window.showPanel('quests',this)"><div class="nav-icon">⚔</div><div class="nav-lbl">QUESTS</div></button>
-    <button class="nav-btn" onclick="window.showPanel('subjects',this)"><div class="nav-icon">📖</div><div class="nav-lbl">STUDY</div></button>
-    <button class="nav-btn" onclick="window.showPanel('boss',this)"><div class="nav-icon">☠</div><div class="nav-lbl">BOSSES</div></button>
-    <button class="nav-btn" onclick="window.showPanel('analytics',this)"><div class="nav-icon">📊</div><div class="nav-lbl">STATS</div></button>
-    <button class="nav-btn" onclick="window.showPanel('fitness',this)"><div class="nav-icon">⚡</div><div class="nav-lbl">FITNESS</div></button>
-    <button class="nav-btn" onclick="window.showPanel('reflect',this)"><div class="nav-icon">◈</div><div class="nav-lbl">REFLECT</div></button>
-    <button class="nav-btn" onclick="window.showPanel('settings',this)"><div class="nav-icon">⚙</div><div class="nav-lbl">CONFIG</div></button>
-  </div>
-
-  <button class="chat-fab" onclick="window.toggleChat()">🧠</button>
-  <div class="chat-window" id="chat-window">
-    <div class="chat-header"><div class="chat-avatar">⚡</div><div class="chat-title">ARISE COACH</div><button class="chat-clear-btn" onclick="window.clearChat()" style="background:none; border:none; color:var(--text2); cursor:pointer">Clear</button><button class="chat-close-btn" onclick="window.toggleChat()" style="background:none; border:none; color:var(--text2); cursor:pointer">✕</button></div>
-    <div class="chat-messages" id="chat-messages"></div>
-    <div class="chat-input-row"><textarea class="chat-textarea" id="chat-input" placeholder="Ask your coach..." rows="1"></textarea><button class="chat-send-btn" onclick="window.sendChat()">↑</button></div>
+    <button class="nav-btn active" onclick="showPanel('quests',this)"><div class="nav-icon">⚔</div><div class="nav-lbl">QUESTS</div></button>
+    <button class="nav-btn" onclick="showPanel('reflect',this)"><div class="nav-icon">📝</div><div class="nav-lbl">REFLECT</div></button>
+    <button class="nav-btn" onclick="showPanel('settings',this)"><div class="nav-icon">⚙</div><div class="nav-lbl">SETTINGS</div></button>
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-overlay" onclick="window.closeModalOutside(event)">
-  <div class="modal"><div class="modal-title" id="modal-title">Add Quest</div><div id="modal-body"></div><div class="modal-btns"><button class="m-cancel" onclick="window.closeModal()">Cancel</button><button class="m-confirm" onclick="window.confirmModal()">Confirm</button></div></div>
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeModal()">
+  <div class="modal"><div class="modal-title" id="modalTitle">Add Quest</div><div id="modalBody"></div><div class="modal-btns"><button class="m-cancel" onclick="closeModal()" style="background:var(--bg4); border:none; padding:10px; border-radius:8px; margin-right:8px">Cancel</button><button class="m-confirm" onclick="confirmModal()" style="background:var(--accent); border:none; padding:10px; border-radius:8px; color:#fff">Add</button></div></div>
 </div>
 
 <div class="toast" id="toast"></div>
-<div class="lvlup" id="lvlup"><div class="lvlup-title">⬡ LEVEL UP ⬡</div><div class="lvlup-num" id="lvlup-num">2</div><div class="lvlup-sub" id="lvlup-sub">Rank rising...</div><button class="lvlup-close" onclick="window.closeLvlUp()" style="margin-top:26px; padding:8px 26px; background:var(--gold-dim); border:1px solid rgba(200,168,75,0.3); border-radius:8px; color:var(--gold); cursor:pointer">CONTINUE</button></div>
 
 <script>
 // ============================================================
-// COMPLETE ARISE LIFE OS - SINGLE FILE WORKING VERSION
+// ARISE - ADHD OPTIMIZED - Complete Working Version
+// Visual XP, Stamps, Instant Feedback, Body Double
 // ============================================================
 
-// Supabase
 const SUPABASE_URL = 'https://ujyimzatxcwjepkrbktb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqeWltemF0eGN3amVwa3Jia3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDU4NDYsImV4cCI6MjA5MDg4MTg0Nn0.c-hty3mpc-l1FKUSYwHIRvi3_xsmnzZBHGnkbCUxACk';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// State
-let S = {
-  xp: 0, level: 1, streak: 0, multiplier: 1.0, streakFreezeCount: 1,
-  lastSealDate: null, playerName: 'SEEKER', avatarType: 'knight',
-  height: null, weight: null, fitnessGoal: 'maintain',
-  weeklyTarget: 500, weeklyCurrentXP: 0, weeklyStartDate: null,
-  stats: { Mind: 10, Discipline: 10, Body: 10, Awareness: 10, Strategy: 10 },
-  dailyLog: {}, xpEvents: [],
-  subjects: [{id:1,name:'Physics',xp:0,sessions:0},{id:2,name:'Mathematics',xp:0,sessions:0},{id:3,name:'Philosophy',xp:0,sessions:0}],
-  quests: [
-    {id:1,name:'Morning pages',type:'daily',xp:30,stats:[{type:'Discipline',value:2}],done:false},
-    {id:2,name:'Study session',type:'daily',xp:50,stats:[{type:'Mind',value:2}],done:false},
-    {id:3,name:'Move body',type:'daily',xp:40,stats:[{type:'Body',value:3}],done:false}
-  ],
-  bosses: [{id:100,name:'The Blank Page',desc:'Write 1000 words',hp:100,xp:300,stats:[{type:'Discipline',value:5}]}],
-  fitnessLogs: {},
-  soundEnabled: true, soundVolume: 70, reminderTime: '22:00',
-  nextId: 200
-};
-
+// STATE
 let currentUser = null;
 let authMode = 'signin';
-let prevLevel = 1;
+let S = {
+  totalXP: 0, level: 1, streak: 0, playerName: 'SEEKER',
+  stats: { Mind: 10, Discipline: 10, Body: 10, Awareness: 10, Strategy: 10 },
+  quests: [],
+  todayXP: 0,
+  stamps: 0,
+  lastSealDate: null,
+  weeklyXP: 0, weeklyTarget: 500
+};
+
 let modalMode = '';
-let selectedStatChips = [];
-let chatHistory = [];
+let activeCountdown = null;
+let bodyDoubleInterval = null;
+
+// ===== HELPERS =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function getToday() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+
+// ===== VISUAL XP SYSTEM =====
+const XP_PER_STAMP = 50;
+const DAILY_GOAL = 500;
+
+function updateXPVisuals(xpGained, questElement) {
+  S.todayXP += xpGained;
+  S.weeklyXP += xpGained;
+  
+  // Floating XP number
+  if (questElement) {
+    const rect = questElement.getBoundingClientRect();
+    const floatDiv = document.createElement('div');
+    floatDiv.className = 'xp-float';
+    floatDiv.textContent = `+${xpGained} XP`;
+    floatDiv.style.left = rect.right - 40 + 'px';
+    floatDiv.style.top = rect.top + 'px';
+    document.body.appendChild(floatDiv);
+    setTimeout(() => floatDiv.remove(), 800);
+  }
+  
+  // Update number
+  document.getElementById('todayXP').textContent = S.todayXP;
+  
+  // Update stamps
+  const newStampCount = Math.floor(S.todayXP / XP_PER_STAMP);
+  if (newStampCount > S.stamps) {
+    for (let i = S.stamps; i < newStampCount; i++) {
+      const stamps = document.querySelectorAll('.stamp');
+      if (stamps[i]) {
+        stamps[i].classList.add('earned');
+        stamps[i].style.animation = 'stampPop 0.3s ease';
+        setTimeout(() => { if(stamps[i]) stamps[i].style.animation = ''; }, 300);
+        playSound('stamp');
+        triggerMiniConfetti(stamps[i]);
+      }
+    }
+    S.stamps = newStampCount;
+    showToast(`⭐ STAMP EARNED! ${S.stamps}/10 stamps`);
+    
+    // Every 5 stamps = bonus
+    if (S.stamps % 5 === 0 && S.stamps > 0) {
+      triggerConfetti();
+      S.todayXP += 50;
+      document.getElementById('todayXP').textContent = S.todayXP;
+      showToast(`🎉 ${S.stamps} STAMPS! +50 BONUS XP!`);
+    }
+  }
+  
+  // Update ring
+  const pct = Math.min(100, (S.todayXP / DAILY_GOAL) * 100);
+  drawProgressRing(pct);
+  
+  // Next milestone
+  const nextStamp = (S.stamps + 1) * XP_PER_STAMP;
+  const needed = Math.max(0, nextStamp - S.todayXP);
+  document.getElementById('nextMilestone').innerHTML = needed > 0 ? `⚡ ${needed} more XP for next stamp!` : `🎯 ${DAILY_GOAL - S.todayXP} XP to daily goal!`;
+  
+  // Daily goal complete
+  if (S.todayXP >= DAILY_GOAL && !window.dailyBonusClaimed) {
+    window.dailyBonusClaimed = true;
+    triggerConfetti();
+    showToast('🏆 DAILY GOAL COMPLETE! +100 BONUS XP');
+    S.todayXP += 100;
+    document.getElementById('todayXP').textContent = S.todayXP;
+    updateXPVisuals(0, null);
+  }
+  
+  // Weekly update
+  const weeklyPct = Math.min(100, (S.weeklyXP / S.weeklyTarget) * 100);
+  document.getElementById('weeklyFill').style.width = `${weeklyPct}%`;
+  document.getElementById('weeklyPct').textContent = `${Math.floor(S.weeklyXP)} / ${S.weeklyTarget} XP`;
+  
+  saveToLocal();
+}
+
+function drawProgressRing(percent) {
+  const canvas = document.getElementById('xpRing');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const size = 70, center = 35, radius = 28;
+  const start = -0.5 * Math.PI;
+  const end = start + (percent / 100) * 2 * Math.PI;
+  
+  ctx.clearRect(0, 0, size, size);
+  ctx.beginPath();
+  ctx.arc(center, center, radius, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(80,120,220,0.2)';
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.arc(center, center, radius, start, end);
+  ctx.strokeStyle = '#c8a84b';
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  
+  ctx.font = 'bold 14px "Rajdhani"';
+  ctx.fillStyle = '#e8d080';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${Math.floor(percent)}%`, center, center);
+}
+
+function renderStamps() {
+  const container = document.getElementById('stampTrack');
+  const stampCount = Math.floor(S.todayXP / XP_PER_STAMP);
+  let html = '';
+  for (let i = 0; i < 10; i++) {
+    html += `<div class="stamp ${i < stampCount ? 'earned' : ''}">${i < stampCount ? '⭐' : '○'}</div>`;
+  }
+  container.innerHTML = html;
+  S.stamps = stampCount;
+}
+
+// ===== SOUNDS (Web Audio) =====
 let audioCtx = null;
-let isMuted = false;
-let xpChart = null;
-
-// Helpers
-function todayStr() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function getMondayStr() { const d=new Date(); d.setHours(0,0,0,0); const day=d.getDay(); const diff=day===0?-6:1-day; d.setDate(d.getDate()+diff); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
-function updateSysMsg() { const msgs=['"Begin."','"Discipline is not a feeling."','"Forward."']; document.getElementById('sys-msg').textContent=msgs[Math.floor(Math.random()*msgs.length)]; }
-
-// XP & Level
-function xpForLevel(l) { return Math.round(500 * Math.pow(1.4, l-1)); }
-function recalcLevel() {
-  let lvl=1, rem=S.xp;
-  while(lvl<10 && rem>=xpForLevel(lvl)){ rem-=xpForLevel(lvl); lvl++; }
-  const needed=xpForLevel(lvl); const pct=Math.min(100,Math.round((rem/needed)*100));
-  S.level=lvl;
-  document.getElementById('level-badge').textContent='LVL '+lvl;
-  document.getElementById('xp-bar').style.width=pct+'%';
-  document.getElementById('xp-text').textContent=rem+' / '+needed;
-  document.getElementById('player-rank').textContent=['','E·AWAKENING','E+·STIRRING','D·RISING','D+·FORGING','C·DRIVEN','C+·RELENTLESS','B·DISCIPLINED','B+·EXCEPTIONAL','A·SOVEREIGN','S·LEGEND'][lvl]||'S·LEGEND';
-  if(lvl>prevLevel){ document.getElementById('lvlup').classList.add('show'); prevLevel=lvl; }
-}
-function closeLvlUp() { document.getElementById('lvlup').classList.remove('show'); }
-function awardXP(amount, source, label, statsArr, event, isHidden) {
-  const earned=Math.round(amount*S.multiplier);
-  if(isHidden){
-    const today=todayStr();
-    if(!S.dailyLog[today]) S.dailyLog[today]={};
-    S.dailyLog[today].hidden_xp=(S.dailyLog[today].hidden_xp||0)+earned;
-    showToast(`+${earned} XP (appears after reflection)`);
-  } else {
-    S.xp+=earned; S.weeklyCurrentXP=(S.weeklyCurrentXP||0)+earned;
-    if(statsArr) statsArr.forEach(s=>{ if(S.stats[s.type]) S.stats[s.type]=Math.min(999,S.stats[s.type]+s.value); });
-    recalcLevel(); renderStats(); showToast(`+${earned} XP`);
-  }
-  renderWeeklyBar(); saveState();
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  document.addEventListener('click', () => { if(audioCtx?.state === 'suspended') audioCtx.resume(); }, { once: true });
 }
 
-// Streak
-function updateStreak() {
-  const today=todayStr();
-  const todayQuests=S.quests.filter(q=>q.type==='daily'&&q.done);
-  if(todayQuests.length>0 && S.lastStreakDate!==today){
-    S.streak++; S.multiplier=parseFloat((1+Math.min(1.5,S.streak*0.05)).toFixed(2));
-    S.lastStreakDate=today;
-    document.getElementById('streak-pill').textContent=`🔥 ${S.streak} day streak · ×${S.multiplier.toFixed(1)}`;
-    if(S.streak%7===0){ S.streakFreezeCount++; showToast(`❄️ Freeze earned!`); }
+function playSound(type) {
+  if (!audioCtx) initAudio();
+  if (audioCtx?.state !== 'running') return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  gain.gain.setValueAtTime(0.2, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+  
+  if (type === 'stamp') { osc.frequency.setValueAtTime(880, now); osc.frequency.setValueAtTime(1046, now + 0.08); osc.stop(now + 0.15); }
+  else if (type === 'complete') { osc.frequency.setValueAtTime(523, now); osc.frequency.setValueAtTime(659, now + 0.1); osc.stop(now + 0.25); }
+  else if (type === 'levelup') { osc.frequency.setValueAtTime(523, now); osc.frequency.setValueAtTime(659, now + 0.12); osc.frequency.setValueAtTime(784, now + 0.24); osc.frequency.setValueAtTime(1046, now + 0.36); osc.stop(now + 0.5); }
+  else if (type === 'click') { osc.frequency.setValueAtTime(440, now); osc.stop(now + 0.05); }
+  else { osc.frequency.setValueAtTime(440, now); osc.stop(now + 0.1); }
+  osc.start();
+}
+
+// ===== CONFETTI =====
+function triggerMiniConfetti(element) {
+  const rect = element.getBoundingClientRect();
+  for (let i = 0; i < 8; i++) {
+    const conf = document.createElement('div');
+    conf.style.position = 'fixed';
+    conf.style.left = rect.left + rect.width/2 + 'px';
+    conf.style.top = rect.top + 'px';
+    conf.style.width = '4px';
+    conf.style.height = '4px';
+    conf.style.background = `hsl(${Math.random() * 360}, 80%, 60%)`;
+    conf.style.borderRadius = '50%';
+    conf.style.pointerEvents = 'none';
+    conf.style.animation = `fall ${Math.random() * 1 + 0.5}s linear forwards`;
+    document.body.appendChild(conf);
+    setTimeout(() => conf.remove(), 1000);
   }
 }
-function showStreakInfo() { showToast(`Streak: ${S.streak} days · Freezes: ${S.streakFreezeCount}`); }
 
-// Weekly
-function renderWeeklyBar() {
-  const monday=getMondayStr();
-  if(!S.weeklyStartDate) S.weeklyStartDate=monday;
-  if(S.weeklyStartDate!==monday){ S.weeklyStartDate=monday; S.weeklyCurrentXP=0; }
-  const pct=Math.min(100,Math.round(((S.weeklyCurrentXP||0)/S.weeklyTarget)*100));
-  document.getElementById('weekly-fill').style.width=pct+'%';
-  document.getElementById('weekly-pct').textContent=(S.weeklyCurrentXP||0)+' / '+S.weeklyTarget+' XP';
+function triggerConfetti() {
+  for (let i = 0; i < 50; i++) {
+    const conf = document.createElement('div');
+    conf.style.position = 'fixed';
+    conf.style.left = Math.random() * window.innerWidth + 'px';
+    conf.style.top = '-10px';
+    conf.style.width = '6px';
+    conf.style.height = '6px';
+    conf.style.background = `hsl(${Math.random() * 360}, 80%, 60%)`;
+    conf.style.borderRadius = '50%';
+    conf.style.pointerEvents = 'none';
+    conf.style.animation = `fall ${Math.random() * 2 + 1}s linear forwards`;
+    document.body.appendChild(conf);
+    setTimeout(() => conf.remove(), 2000);
+  }
+  playSound('levelup');
 }
 
-// Stats
-function renderStats() {
-  document.getElementById('stats-row').innerHTML=Object.entries(S.stats).map(([k,v])=>`<div class="stat-pill"><div class="stat-icon">${k==='Mind'?'🧠':k==='Discipline'?'⚔':k==='Body'?'⚡':k==='Awareness'?'◎':'◆'}</div><div class="stat-lbl">${k.toUpperCase()}</div><div class="stat-val">${v}</div></div>`).join('');
+// ===== 5-SECOND COUNTDOWN =====
+function startCountdown(questId) {
+  const quest = S.quests.find(q => q.id === questId);
+  if (!quest) return;
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'countdown-overlay';
+  overlay.innerHTML = `
+    <div class="countdown-number" id="countdownNum">5</div>
+    <div style="font-size:14px; color:var(--text2); margin-top:10px">Get ready...</div>
+    <div class="countdown-cancel" onclick="this.parentElement.remove()">Cancel</div>
+  `;
+  document.body.appendChild(overlay);
+  
+  let count = 5;
+  const interval = setInterval(() => {
+    count--;
+    const numDiv = document.getElementById('countdownNum');
+    if (numDiv) numDiv.textContent = count;
+    playSound('click');
+    if (count <= 0) {
+      clearInterval(interval);
+      overlay.remove();
+      completeQuest(quest.id);
+    }
+  }, 1000);
 }
 
-// Quests
+function completeQuest(questId) {
+  const quest = S.quests.find(q => q.id === questId);
+  if (!quest || quest.done) return;
+  
+  quest.done = true;
+  const xpEarned = quest.xp;
+  
+  // Visual feedback
+  updateXPVisuals(xpEarned, document.querySelector(`.quest-card[data-id="${questId}"]`));
+  
+  // Update stats
+  if (quest.stats) {
+    quest.stats.forEach(s => {
+      if (S.stats[s.type]) S.stats[s.type] = Math.min(999, S.stats[s.type] + s.value);
+    });
+  }
+  
+  // Streak update (any daily quest = streak maintained)
+  if (quest.type === 'daily') {
+    const today = getToday();
+    if (S.lastStreakDate !== today) {
+      S.streak++;
+      S.lastStreakDate = today;
+      document.getElementById('streakPill').textContent = `🔥 ${S.streak} day streak`;
+      showToast(`🔥 Streak: ${S.streak} days!`);
+    }
+  }
+  
+  renderQuests();
+  renderStats();
+  saveToLocal();
+  syncToCloud();
+  playSound('complete');
+  showToast(`+${xpEarned} XP! ${quest.name} completed`);
+}
+
+// ===== SCREW IT - Partial Credit =====
+function screwIt(questId) {
+  const quest = S.quests.find(q => q.id === questId);
+  if (!quest || quest.done) return;
+  
+  quest.done = true;
+  const halfXP = Math.floor(quest.xp / 2);
+  updateXPVisuals(halfXP, null);
+  showToast(`✓ Good enough! +${halfXP} XP (half credit)`);
+  
+  renderQuests();
+  saveToLocal();
+}
+
+// ===== RENDER QUESTS =====
 function renderQuests() {
-  const daily=S.quests.filter(q=>q.type==='daily');
-  const other=S.quests.filter(q=>['main','chaos','recovery','elite'].includes(q.type));
-  const persistent=S.quests.filter(q=>q.type==='persistent');
-  document.getElementById('quest-list-daily').innerHTML=daily.length?daily.map(q=>`<div class="quest-card q-${q.type}${q.done?' done':''}" onclick="window.toggleQuest(${q.id},event)"><div class="q-check">${q.done?'✓':''}</div><div class="q-body"><div class="quest-name">${q.name}</div></div><div class="q-xp">+${q.xp}</div><div class="q-edit" onclick="event.stopPropagation();window.editQuest(${q.id})">✎</div><div class="q-delete" onclick="event.stopPropagation();window.deleteQuest(${q.id})">✕</div></div>`).join(''):'<div class="empty-state">No daily quests. Add one.</div>';
-  document.getElementById('quest-list-other').innerHTML=other.length?other.map(q=>`<div class="quest-card q-${q.type}${q.done?' done':''}" onclick="window.toggleQuest(${q.id},event)"><div class="q-check">${q.done?'✓':''}</div><div class="q-body"><div class="quest-name">${q.name}</div></div><div class="q-xp">+${q.xp}</div><div class="q-edit" onclick="event.stopPropagation();window.editQuest(${q.id})">✎</div><div class="q-delete" onclick="event.stopPropagation();window.deleteQuest(${q.id})">✕</div></div>`).join(''):'<div class="empty-state">No main or chaos quests.</div>';
-  document.getElementById('quest-list-persistent').innerHTML=persistent.length?persistent.map(q=>`<div class="quest-card q-persistent${q.done?' done':''}" onclick="window.toggleQuest(${q.id},event)"><div class="q-check">${q.done?'✓':''}</div><div class="q-body"><div class="quest-name">${q.name}</div></div><div class="q-xp">+${q.xp}</div><div class="q-delete" onclick="event.stopPropagation();window.deleteQuest(${q.id})">✕</div></div>`).join(''):'<div class="empty-state">No persistent goals yet.</div>';
+  const todaySealed = S.lastSealDate === getToday();
+  const daily = S.quests.filter(q => q.type === 'daily');
+  const other = S.quests.filter(q => q.type === 'main' || q.type === 'chaos');
+  
+  if (todaySealed) {
+    document.getElementById('dailyQuests').innerHTML = '<div class="empty-state">✨ Day sealed! Come back tomorrow for new quests.</div>';
+    document.getElementById('otherQuests').innerHTML = '<div class="empty-state">Complete reflection to unlock tomorrow\'s quests.</div>';
+    return;
+  }
+  
+  document.getElementById('dailyQuests').innerHTML = daily.map(q => `
+    <div class="quest-card ${q.done ? 'done' : ''}" data-id="${q.id}" onclick="if(!${q.done}) startCountdown(${q.id})">
+      <div class="q-check">${q.done ? '✓' : ''}</div>
+      <div class="q-body"><div class="quest-name">${q.name}</div></div>
+      <div class="q-xp">+${q.xp}</div>
+      ${!q.done ? `<div class="screw-it-btn" onclick="event.stopPropagation(); screwIt(${q.id})">50%</div>` : ''}
+      <div class="q-delete" onclick="event.stopPropagation(); deleteQuest(${q.id})">✕</div>
+    </div>
+  `).join('');
+  if (!daily.length) document.getElementById('dailyQuests').innerHTML = '<div class="empty-state">No daily quests. Add one.</div>';
+  
+  document.getElementById('otherQuests').innerHTML = other.map(q => `
+    <div class="quest-card ${q.done ? 'done' : ''}" data-id="${q.id}" onclick="if(!${q.done}) completeQuest(${q.id})">
+      <div class="q-check">${q.done ? '✓' : ''}</div>
+      <div class="q-body"><div class="quest-name">${q.name}</div></div>
+      <div class="q-xp">+${q.xp}</div>
+      <div class="q-delete" onclick="event.stopPropagation(); deleteQuest(${q.id})">✕</div>
+    </div>
+  `).join('');
+  if (!other.length) document.getElementById('otherQuests').innerHTML = '<div class="empty-state">No main quests. Add one.</div>';
 }
 
-function toggleQuest(id,event) {
-  if(event.target.classList.contains('q-delete')||event.target.classList.contains('q-edit')) return;
-  const q=S.quests.find(x=>x.id===id); if(!q) return;
-  q.done=!q.done;
-  if(q.done){ awardXP(q.xp,'quest',q.name,q.stats,event,true); updateStreak(); }
-  renderQuests(); saveState();
-}
-function deleteQuest(id){ if(confirm('Delete this quest?')){ S.quests=S.quests.filter(q=>q.id!==id); renderQuests(); saveState(); showToast('Quest deleted'); } }
-function editQuest(id){ const q=S.quests.find(x=>x.id===id); if(!q) return; const newName=prompt('Edit name:',q.name); if(newName) q.name=newName; const newXp=prompt('Edit XP:',q.xp); if(newXp&&!isNaN(parseInt(newXp))) q.xp=parseInt(newXp); renderQuests(); saveState(); }
-
-// Subjects
-function renderSubjects() {
-  document.getElementById('subject-list').innerHTML=S.subjects.map(s=>`<div class="quest-card"><div class="q-body"><div class="quest-name">${s.name}</div><div class="quest-foot">${s.xp} XP · ${s.sessions} sessions</div></div><div class="q-xp" onclick="window.studySubject(${s.id},event)" style="cursor:pointer">Study +30</div></div>`).join('');
-}
-function studySubject(id,event){ const s=S.subjects.find(x=>x.id===id); if(s){ s.xp+=30; s.sessions++; awardXP(30,'subject','Studied '+s.name,[{type:'Mind',value:1}],event,true); renderSubjects(); saveState(); } }
-
-// Bosses
-function renderBosses() {
-  const active=S.bosses.filter(b=>b.hp>0);
-  document.getElementById('boss-list').innerHTML=active.length?active.map(b=>`<div class="quest-card"><div class="q-body"><div class="quest-name">${b.name}</div><div class="quest-foot">${b.desc} · HP: ${b.hp}%</div></div><div class="q-xp" onclick="window.strikeBoss(${b.id},event)" style="cursor:pointer">Strike (-25%)</div></div>`).join(''):'<div class="empty-state">No active bosses. Add one.</div>';
-}
-function strikeBoss(id,event){ const b=S.bosses.find(x=>x.id===id); if(b&&b.hp>0){ b.hp=Math.max(0,b.hp-25); if(b.hp<=0){ awardXP(b.xp,'boss','Defeated '+b.name,b.stats,event,true); showToast('BOSS DEFEATED!'); } renderBosses(); saveState(); } }
-
-// Reflection & Hidden XP
-async function endDay() {
-  const today=todayStr();
-  if(S.dailyLog[today]?.reflected){ showToast('Already sealed today'); return; }
-  const win=document.getElementById('reflection-win')?.value||'';
-  const slip=document.getElementById('reflection-slip')?.value||'';
-  const tomorrow=document.getElementById('reflection-tomorrow')?.value||'';
-  let bonus=0; if(win) bonus+=20; if(slip) bonus+=15; if(tomorrow) bonus+=10;
-  const hiddenXP=S.dailyLog[today]?.hidden_xp||0;
-  const totalXP=hiddenXP+bonus;
-  S.xp+=totalXP; S.weeklyCurrentXP=(S.weeklyCurrentXP||0)+totalXP;
-  if(win) S.stats.Awareness=Math.min(999,S.stats.Awareness+1);
-  if(slip) S.stats.Discipline=Math.min(999,S.stats.Discipline+2);
-  if(tomorrow) S.stats.Strategy=Math.min(999,S.stats.Strategy+1);
-  S.dailyLog[today]={reflected:true,reflections:{win,slip,tomorrow},hidden_xp:0,xp_earned:totalXP};
-  S.quests.forEach(q=>{ if(q.type==='daily') q.done=false; });
-  recalcLevel(); renderStats(); renderQuests(); renderWeeklyBar(); saveState();
-  document.getElementById('reflect-feedback').innerHTML=`<div style="background:var(--success);padding:12px;border-radius:8px">✓ Day sealed! +${totalXP} XP</div>`;
-  showToast(`✨ Day sealed! +${totalXP} XP`);
+function deleteQuest(id) {
+  if (confirm('Delete this quest?')) {
+    S.quests = S.quests.filter(q => q.id !== id);
+    renderQuests();
+    saveToLocal();
+    showToast('Quest deleted');
+  }
 }
 
-// Analytics
-function renderAnalytics() {
-  document.getElementById('analytics-grid').innerHTML=`<div class="stat-pill"><div class="stat-val">${S.xp}</div><div class="stat-lbl">XP</div></div><div class="stat-pill"><div class="stat-val">${S.streak}</div><div class="stat-lbl">STREAK</div></div><div class="stat-pill"><div class="stat-val">${S.level}</div><div class="stat-lbl">LEVEL</div></div>`;
-  const ctx=document.getElementById('xp-chart')?.getContext('2d');
-  if(ctx && xpChart) xpChart.destroy();
-  if(ctx){ const last7=[]; for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); last7.push(S.dailyLog[d.toISOString().split('T')[0]]?.xp_earned||0); } xpChart=new Chart(ctx,{type:'line',data:{labels:['Day6','Day5','Day4','Day3','Day2','Yesterday','Today'],datasets:[{data:last7,borderColor:'#4a7aff',tension:0.3}]},options:{responsive:true}}); }
+// ===== STATS =====
+function renderStats() {
+  document.getElementById('statsRow').innerHTML = Object.entries(S.stats).map(([k,v]) => `
+    <div class="stat-pill"><div class="stat-lbl">${k.toUpperCase()}</div><div class="stat-val">${v}</div></div>
+  `).join('');
 }
 
-// Settings
-function renderSettings() {
-  document.getElementById('settings-container').innerHTML=`
-    <div class="ai-config"><div class="setting-row"><span>Name</span><input type="text" id="set-name" value="${S.playerName}" style="background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:4px 8px"></div><button class="sec-action" onclick="window.saveProfile()">Save</button></div>
-    <div class="ai-config"><div class="setting-row"><span>Master Volume</span><input type="range" class="volume-slider" id="set-volume" min="0" max="100" value="${S.soundVolume}" onchange="window.updateVolume(this.value)"><span>${S.soundVolume}%</span></div><button class="sec-action" onclick="window.toggleMute()">${S.soundEnabled?'🔊 Mute':'🔇 Unmute'}</button></div>
-    <div class="ai-config"><div class="setting-row"><span>Reflection Time</span><input type="time" id="set-time" value="${S.reminderTime}" style="background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:4px 8px"></div><button class="sec-action" onclick="window.saveReminder()">Save</button></div>
-    <div class="ai-config"><input type="password" id="gemini-key" placeholder="Gemini API Key" style="width:100%;margin-bottom:8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:8px"><button class="sec-action" onclick="window.saveGeminiKey()">Save Key</button></div>
-    <div class="ai-config"><button class="sec-action" onclick="window.exportData()">📥 Export JSON</button><button class="sec-action" onclick="window.pushToCloud()" style="margin-top:8px">☁️ Sync Now</button><button class="sec-action" onclick="window.signOut()" style="margin-top:8px;background:var(--danger-dim);color:var(--danger)">🚪 Sign Out</button></div>`;
+// ===== REFLECTION & SEAL =====
+function sealDay() {
+  const today = getToday();
+  if (S.lastSealDate === today) {
+    showToast('Already sealed today! Come back tomorrow.');
+    return;
+  }
+  
+  const ref1 = document.getElementById('reflection1').value.trim();
+  const ref2 = document.getElementById('reflection2').value.trim();
+  const ref3 = document.getElementById('reflection3').value.trim();
+  
+  if (!ref1 && !ref2 && !ref3) {
+    showToast('Write at least one reflection before sealing');
+    return;
+  }
+  
+  let bonus = 0;
+  if (ref1) bonus += 20;
+  if (ref2) bonus += 15;
+  if (ref3) bonus += 10;
+  
+  const totalEarned = S.todayXP + bonus;
+  
+  S.totalXP += totalEarned;
+  S.lastSealDate = today;
+  
+  // Reset for tomorrow
+  S.todayXP = 0;
+  S.stamps = 0;
+  S.quests.forEach(q => { if (q.type === 'daily') q.done = false; });
+  
+  document.getElementById('reflectionFeedback').innerHTML = `
+    <div style="background:rgba(61,220,132,0.15); border:1px solid var(--success); border-radius:10px; padding:12px">
+      <strong>✓ Day Sealed!</strong><br>
+      Quest XP: ${S.todayXP - bonus}+<br>
+      Reflection bonus: +${bonus}<br>
+      <strong>Total: +${totalEarned} XP</strong>
+    </div>
+  `;
+  
+  document.getElementById('reflection1').value = '';
+  document.getElementById('reflection2').value = '';
+  document.getElementById('reflection3').value = '';
+  
+  renderQuests();
+  renderStamps();
+  document.getElementById('todayXP').textContent = '0';
+  drawProgressRing(0);
+  document.getElementById('nextMilestone').innerHTML = '⚡ Complete a quest to earn XP!';
+  
+  saveToLocal();
+  syncToCloud();
+  showToast(`✨ Day sealed! +${totalEarned} XP earned`);
+  playSound('levelup');
+  triggerConfetti();
 }
-function saveProfile(){ S.playerName=document.getElementById('set-name')?.value||S.playerName; document.getElementById('player-name').textContent=S.playerName; saveState(); showToast('Profile saved'); }
-function updateVolume(v){ S.soundVolume=parseInt(v); if(audioCtx && !isMuted) audioCtx.gain?.setValueAtTime(S.soundVolume/100,0); saveState(); renderSettings(); }
-function toggleMute(){ isMuted=!isMuted; S.soundEnabled=!isMuted; document.getElementById('mute-btn').textContent=isMuted?'🔇':'🔊'; saveState(); renderSettings(); }
-function saveReminder(){ S.reminderTime=document.getElementById('set-time')?.value||'22:00'; saveState(); showToast(`Reminder set for ${S.reminderTime}`); }
-function saveGeminiKey(){ const key=document.getElementById('gemini-key')?.value; if(key){ localStorage.setItem('gemini-key',key); showToast('API key saved'); } }
-function exportData(){ const blob=new Blob([JSON.stringify({xp:S.xp,level:S.level,streak:S.streak,stats:S.stats,quests:S.quests},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`arise-${todayStr()}.json`; a.click(); }
 
-// Fitness
-function renderFitness() {
-  const today=todayStr();
-  const log=S.fitnessLogs[today]||{steps:0,workout:0};
-  document.getElementById('fitness-container').innerHTML=`<div class="ai-config"><div class="setting-row"><span>Steps</span><input type="number" id="fit-steps" value="${log.steps||0}" style="width:100px"></div><div class="setting-row"><span>Workout (min)</span><input type="number" id="fit-workout" value="${log.workout||0}" style="width:100px"></div><button class="sec-action" onclick="window.saveFitness()">💪 Log Activity</button></div>`;
+// ===== LEVEL & XP =====
+function getLevelXP(level) { return Math.round(500 * Math.pow(1.4, level - 1)); }
+
+function recalcLevel() {
+  let lvl = 1, rem = S.totalXP;
+  while (lvl < 10 && rem >= getLevelXP(lvl)) { rem -= getLevelXP(lvl); lvl++; }
+  S.level = lvl;
+  document.getElementById('levelBadge').textContent = `LVL ${lvl}`;
+  const ranks = ['', 'E·AWAKENING', 'E+·STIRRING', 'D·RISING', 'D+·FORGING', 'C·DRIVEN', 'C+·RELENTLESS', 'B·DISCIPLINED', 'B+·EXCEPTIONAL', 'A·SOVEREIGN', 'S·LEGEND'];
+  document.getElementById('playerRank').textContent = ranks[lvl] || 'S·LEGEND';
+  document.getElementById('playerName').textContent = S.playerName;
 }
-function saveFitness(){ const steps=parseInt(document.getElementById('fit-steps')?.value)||0; const workout=parseInt(document.getElementById('fit-workout')?.value)||0; const xp=Math.min(100,Math.floor(steps/100)) + Math.min(80,workout*2); S.fitnessLogs[todayStr()]={steps,workout,xp_awarded:xp}; if(xp>0) awardXP(xp,'fitness','Fitness log',[{type:'Body',value:2}],null,true); saveState(); renderFitness(); showToast(`+${xp} XP (hidden)`); }
 
-// Chat
-function toggleChat(){ const w=document.getElementById('chat-window'); w.classList.toggle('open'); if(w.classList.contains('open') && !chatHistory.length){ addChatMsg('ai','I am your ARISE Coach. Ask me about your progress!'); } }
-function addChatMsg(role,text){ const c=document.getElementById('chat-messages'); const d=document.createElement('div'); d.className='chat-msg '+role; d.innerHTML=`<div class="chat-msg-avatar">${role==='user'?'👤':'⚡'}</div><div class="chat-bubble">${text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</div>`; c.appendChild(d); c.scrollTop=c.scrollHeight; chatHistory.push({role,text}); }
-async function sendChat(){ const input=document.getElementById('chat-input'); const msg=input.value.trim(); if(!msg) return; input.value=''; addChatMsg('user',msg); const key=localStorage.getItem('gemini-key'); if(!key){ addChatMsg('ai','Add Gemini API key in Settings'); return; } try{ const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:`You are ARISE Coach. Player: Level ${S.level}, ${S.streak} day streak. Be concise. User: ${msg}`}]}],generationConfig:{temperature:0.7,maxOutputTokens:300}})}); const data=await res.json(); const reply=data.candidates?.[0]?.content?.parts?.[0]?.text||'Sorry, error.'; addChatMsg('ai',reply); }catch(e){ addChatMsg('ai','Error connecting to AI'); } }
-function clearChat(){ chatHistory=[]; document.getElementById('chat-messages').innerHTML=''; addChatMsg('ai','Chat cleared. How can I help?'); }
+// ===== BODY DOUBLE =====
+function startBodyDouble() {
+  bodyDoubleInterval = setInterval(() => {
+    const count = Math.floor(Math.random() * 50) + 10;
+    document.getElementById('bodyDoubleBar').innerHTML = `👥 ${count} people focusing right now. You're not alone.`;
+  }, 30000);
+  document.getElementById('bodyDoubleBar').innerHTML = '👥 Loading focus partners...';
+  setTimeout(() => {
+    document.getElementById('bodyDoubleBar').innerHTML = `👥 ${Math.floor(Math.random() * 50) + 10} people focusing right now. You're not alone.`;
+  }, 1000);
+}
 
-// Modal
-function openModal(mode){ modalMode=mode; selectedStatChips=[]; document.getElementById('modal-title').textContent=mode==='quest'?'Add Quest':mode==='subject'?'Add Subject':mode==='boss'?'Add Boss':'Add Goal'; let body=''; const chips=Object.keys({Mind:'🧠',Discipline:'⚔',Body:'⚡',Awareness:'◎',Strategy:'◆'}).map(s=>`<div class="stat-chip" onclick="window.toggleChip(this,'${s}')">${s}</div>`).join(''); if(mode==='quest'||mode==='quest-persistent'){ body=`<input id="modal-name" placeholder="Quest name"><select id="modal-type"><option value="daily">Daily</option><option value="main">Main</option><option value="chaos">Chaos</option></select><div class="stat-chips">${chips}</div>`; } else if(mode==='subject'){ body=`<input id="modal-name" placeholder="Subject name">`; } else if(mode==='boss'){ body=`<input id="modal-name" placeholder="Boss name"><textarea id="modal-desc" placeholder="Description"></textarea><div class="stat-chips">${chips}</div>`; } document.getElementById('modal-body').innerHTML=body; document.getElementById('modal-overlay').classList.add('open'); }
-function toggleChip(el,stat){ el.classList.toggle('selected'); if(el.classList.contains('selected')) selectedStatChips.push(stat); else selectedStatChips=selectedStatChips.filter(s=>s!==stat); }
-function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
-function closeModalOutside(e){ if(e.target===document.getElementById('modal-overlay')) closeModal(); }
-function confirmModal(){ const name=document.getElementById('modal-name')?.value; if(!name) return; const type=document.getElementById('modal-type')?.value||'daily'; const stats=selectedStatChips.map(s=>({type:s,value:2})); const id=S.nextId++; if(modalMode==='quest'){ S.quests.push({id,name,type,xp:type==='daily'?40:type==='main'?80:150,stats,done:false}); renderQuests(); } else if(modalMode==='subject'){ S.subjects.push({id,name,xp:0,sessions:0}); renderSubjects(); } else if(modalMode==='boss'){ const desc=document.getElementById('modal-desc')?.value||'Defeat this challenge'; S.bosses.push({id,name,desc,hp:100,xp:350,stats}); renderBosses(); } saveState(); closeModal(); showToast(`${name} added`); }
+// ===== MODAL =====
+function openModal(mode) {
+  modalMode = mode;
+  document.getElementById('modalTitle').textContent = 'Add Quest';
+  document.getElementById('modalBody').innerHTML = `
+    <input id="modalName" placeholder="Quest name">
+    <select id="modalType">
+      <option value="daily">Daily (resets tomorrow)</option>
+      <option value="main">Main Quest</option>
+      <option value="chaos">Chaos Quest</option>
+    </select>
+    <input id="modalXp" placeholder="XP reward" value="40" type="number">
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
 
-// Navigation
-function showPanel(name,btn){ document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); document.getElementById('panel-'+name).classList.add('active'); if(btn) btn.classList.add('active'); if(name==='analytics') renderAnalytics(); if(name==='fitness') renderFitness(); if(name==='settings') renderSettings(); }
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
 
-// Auth
-async function handleAuth(){ const email=document.getElementById('login-email').value; const pwd=document.getElementById('login-password').value; const err=document.getElementById('login-error'); if(!email||!pwd){ err.textContent='Email and password required'; return; } const btn=document.getElementById('login-btn'); btn.disabled=true; btn.textContent='...'; try{ let res; if(authMode==='signup'){ res=await supabaseClient.auth.signUp({email,password:pwd}); if(res.error) throw res.error; if(res.data.user&&!res.data.session){ err.style.color='var(--success)'; err.textContent='Check email to confirm!'; btn.disabled=false; btn.textContent='SIGN IN'; return; } } else { res=await supabaseClient.auth.signInWithPassword({email,password:pwd}); if(res.error) throw res.error; } currentUser=res.data.user; await loadUserData(); document.getElementById('login-overlay').style.display='none'; document.getElementById('app').style.display='flex'; showToast(`Welcome, ${S.playerName}`); }catch(e){ err.textContent=e.message; } btn.disabled=false; btn.textContent=authMode==='signin'?'SIGN IN':'CREATE ACCOUNT'; }
-function switchAuthMode(){ authMode=authMode==='signin'?'signup':'signin'; const btn=document.getElementById('login-btn'); const switchText=document.querySelector('.login-switch'); if(authMode==='signup'){ btn.textContent='CREATE ACCOUNT'; switchText.innerHTML='Already have an account? <span>Sign in</span>'; } else { btn.textContent='SIGN IN'; switchText.innerHTML='New here? <span>Create account</span>'; } document.getElementById('login-error').textContent=''; }
-async function loadUserData(){ if(!currentUser) return; try{ const {data:profile}=await supabaseClient.from('users').select('*').eq('auth_id',currentUser.id).single(); if(profile){ S.playerName=profile.name||'SEEKER'; S.xp=profile.xp||0; S.level=profile.level||1; S.streak=profile.streak||0; S.stats=profile.stats||S.stats; } const {data:quests}=await supabaseClient.from('quests').select('*').eq('user_id',currentUser.id); if(quests?.length) S.quests=quests.map((q,i)=>({id:S.nextId+i,name:q.name,type:q.type,xp:q.xp,stats:q.stats||[],done:q.status==='done'})); recalcLevel(); renderStats(); renderQuests(); renderSubjects(); renderBosses(); renderWeeklyBar(); }catch(e){ console.log('Load error:',e); } }
-async function pushToCloud(){ if(!currentUser) return; try{ const {data:existing}=await supabaseClient.from('users').select('id').eq('auth_id',currentUser.id).single(); const userData={auth_id:currentUser.id,name:S.playerName,xp:S.xp,level:S.level,streak:S.streak,stats:S.stats}; if(existing) await supabaseClient.from('users').update(userData).eq('id',existing.id); else await supabaseClient.from('users').insert(userData); await supabaseClient.from('quests').delete().eq('user_id',currentUser.id); if(S.quests.length) await supabaseClient.from('quests').insert(S.quests.map(q=>({user_id:currentUser.id,name:q.name,type:q.type,status:q.done?'done':'active',xp:q.xp,stats:q.stats}))); showToast('✓ Synced'); }catch(e){ showToast('Sync failed'); } }
-async function signOut(){ await supabaseClient.auth.signOut(); currentUser=null; document.getElementById('app').style.display='none'; document.getElementById('login-overlay').style.display='flex'; showToast('Signed out'); }
+function confirmModal() {
+  const name = document.getElementById('modalName')?.value;
+  if (!name) return;
+  const type = document.getElementById('modalType')?.value || 'daily';
+  const xp = parseInt(document.getElementById('modalXp')?.value) || 40;
+  
+  S.quests.push({
+    id: Date.now(),
+    name: name,
+    type: type,
+    xp: xp,
+    done: false,
+    stats: [{ type: 'Discipline', value: 2 }]
+  });
+  
+  closeModal();
+  renderQuests();
+  saveToLocal();
+  showToast(`${name} added!`);
+  playSound('click');
+}
 
-// Save/Load State
-function saveState(){ localStorage.setItem('arise-v7',JSON.stringify(S)); if(currentUser) pushToCloud(); }
-function loadState(){ try{ const saved=localStorage.getItem('arise-v7'); if(saved){ const p=JSON.parse(saved); if(p.quests?.length) S.quests=p.quests; if(p.subjects?.length) S.subjects=p.subjects; if(p.bosses?.length) S.bosses=p.bosses; Object.assign(S,p); } }catch(e){} }
+// ===== NAVIGATION =====
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`panel${name.charAt(0).toUpperCase() + name.slice(1)}`).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'quests') renderQuests();
+}
 
-// Init
-async function init(){ loadState(); recalcLevel(); renderStats(); renderQuests(); renderSubjects(); renderBosses(); renderWeeklyBar(); renderFitness(); renderSettings(); document.getElementById('player-name').textContent=S.playerName; const {data:{session}}=await supabaseClient.auth.getSession(); if(session?.user){ currentUser=session.user; await loadUserData(); document.getElementById('login-overlay').style.display='none'; document.getElementById('app').style.display='flex'; } document.getElementById('login-btn').onclick=handleAuth; document.getElementById('login-switch').onclick=switchAuthMode; document.getElementById('login-password').addEventListener('keypress',e=>{ if(e.key==='Enter') handleAuth(); }); setInterval(()=>{ if(currentUser) pushToCloud(); },30000); }
+// ===== STORAGE & SYNC =====
+function saveToLocal() {
+  localStorage.setItem('arise_adhd', JSON.stringify({
+    totalXP: S.totalXP, level: S.level, streak: S.streak,
+    playerName: S.playerName, stats: S.stats, quests: S.quests,
+    todayXP: S.todayXP, lastSealDate: S.lastSealDate,
+    weeklyXP: S.weeklyXP, weeklyTarget: S.weeklyTarget
+  }));
+}
+
+function loadFromLocal() {
+  const saved = localStorage.getItem('arise_adhd');
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+      S.totalXP = data.totalXP || 0;
+      S.level = data.level || 1;
+      S.streak = data.streak || 0;
+      S.playerName = data.playerName || 'SEEKER';
+      S.stats = data.stats || { Mind: 10, Discipline: 10, Body: 10, Awareness: 10, Strategy: 10 };
+      S.quests = data.quests || [];
+      S.todayXP = data.todayXP || 0;
+      S.lastSealDate = data.lastSealDate || null;
+      S.weeklyXP = data.weeklyXP || 0;
+      S.weeklyTarget = data.weeklyTarget || 500;
+    } catch(e) {}
+  }
+  
+  if (!S.quests.length) {
+    S.quests = [
+      { id: 1, name: '🌅 Morning pages (5 min)', type: 'daily', xp: 25, done: false, stats: [{ type: 'Awareness', value: 2 }] },
+      { id: 2, name: '📚 Study session (25 min)', type: 'daily', xp: 40, done: false, stats: [{ type: 'Mind', value: 2 }] },
+      { id: 3, name: '🏃 Move body (15 min)', type: 'daily', xp: 35, done: false, stats: [{ type: 'Body', value: 3 }] },
+      { id: 4, name: '⚡ Deep work (one pomodoro)', type: 'main', xp: 60, done: false, stats: [{ type: 'Discipline', value: 3 }] }
+    ];
+  }
+}
+
+async function syncToCloud() {
+  if (!currentUser) return;
+  const dot = document.getElementById('syncDot');
+  if (dot) dot.style.background = '#ff9050';
+  try {
+    await supabase.from('user_data').upsert({
+      user_id: currentUser.id,
+      data: { totalXP: S.totalXP, streak: S.streak, playerName: S.playerName, stats: S.stats, quests: S.quests, todayXP: S.todayXP, lastSealDate: S.lastSealDate, weeklyXP: S.weeklyXP },
+      updated_at: new Date()
+    });
+    if (dot) dot.classList.add('synced');
+    setTimeout(() => { if(dot) dot.classList.remove('synced'); }, 2000);
+  } catch(e) {}
+}
+
+async function loadFromCloud() {
+  if (!currentUser) return;
+  try {
+    const { data } = await supabase.from('user_data').select('data').eq('user_id', currentUser.id).single();
+    if (data?.data) {
+      S.totalXP = data.data.totalXP || 0;
+      S.streak = data.data.streak || 0;
+      S.playerName = data.data.playerName || 'SEEKER';
+      S.stats = data.data.stats || S.stats;
+      S.quests = data.data.quests || S.quests;
+      S.todayXP = data.data.todayXP || 0;
+      S.lastSealDate = data.data.lastSealDate || null;
+      S.weeklyXP = data.data.weeklyXP || 0;
+      renderQuests();
+    }
+  } catch(e) {}
+}
+
+// ===== AUTH =====
+async function handleAuth() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const errorDiv = document.getElementById('loginError');
+  if (!email || !password) { errorDiv.textContent = 'Email and password required'; return; }
+  
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = '...';
+  
+  try {
+    let result;
+    if (authMode === 'signup') {
+      result = await supabase.auth.signUp({ email, password });
+      if (result.error) throw result.error;
+      if (result.data.user && !result.data.session) {
+        errorDiv.style.color = '#3ddc84';
+        errorDiv.textContent = 'Check your email to confirm!';
+        btn.disabled = false; btn.textContent = 'SIGN IN';
+        return;
+      }
+    } else {
+      result = await supabase.auth.signInWithPassword({ email, password });
+      if (result.error) throw result.error;
+    }
+    
+    currentUser = result.data.user;
+    await loadFromCloud();
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    recalcLevel();
+    renderStats();
+    renderQuests();
+    renderStamps();
+    drawProgressRing((S.todayXP / DAILY_GOAL) * 100);
+    document.getElementById('todayXP').textContent = S.todayXP;
+    document.getElementById('streakPill').textContent = `🔥 ${S.streak} day streak`;
+    startBodyDouble();
+    showToast(`Welcome back, ${S.playerName}`);
+  } catch (err) { errorDiv.textContent = err.message; }
+  btn.disabled = false; btn.textContent = authMode === 'signin' ? 'SIGN IN' : 'CREATE ACCOUNT';
+}
+
+function switchAuthMode() {
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  const btn = document.getElementById('loginBtn');
+  const switchText = document.querySelector('.login-switch');
+  if (authMode === 'signup') { btn.textContent = 'CREATE ACCOUNT'; switchText.innerHTML = 'Already have an account? <span>Sign in</span>'; }
+  else { btn.textContent = 'SIGN IN'; switchText.innerHTML = 'New here? <span>Create account</span>'; }
+  document.getElementById('loginError').textContent = '';
+}
+
+async function signOut() {
+  await supabase.auth.signOut();
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+  if (bodyDoubleInterval) clearInterval(bodyDoubleInterval);
+  showToast('Signed out');
+}
+
+function saveGeminiKey() {
+  const key = document.getElementById('geminiKeyInput').value;
+  if (key) { localStorage.setItem('gemini-key', key); showToast('API key saved'); }
+}
+
+// ===== MIDNIGHT RESET =====
+function scheduleMidnightReset() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  setTimeout(() => {
+    S.quests.forEach(q => { if (q.type === 'daily') q.done = false; });
+    S.todayXP = 0;
+    S.stamps = 0;
+    renderQuests();
+    renderStamps();
+    document.getElementById('todayXP').textContent = '0';
+    drawProgressRing(0);
+    saveToLocal();
+    showToast('🌙 New day! Daily quests reset.');
+    scheduleMidnightReset();
+  }, midnight - now);
+}
+
+// ===== INIT =====
+async function init() {
+  loadFromLocal();
+  recalcLevel();
+  renderStats();
+  renderQuests();
+  renderStamps();
+  drawProgressRing((S.todayXP / DAILY_GOAL) * 100);
+  document.getElementById('todayXP').textContent = S.todayXP;
+  document.getElementById('streakPill').textContent = `🔥 ${S.streak} day streak`;
+  initAudio();
+  scheduleMidnightReset();
+  
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    await loadFromCloud();
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    startBodyDouble();
+  }
+  
+  document.getElementById('loginBtn').onclick = handleAuth;
+  document.getElementById('loginSwitch').onclick = switchAuthMode;
+  
+  setInterval(() => { if (currentUser) syncToCloud(); }, 30000);
+}
+
 init();
 
-// Expose to window
-window.toggleQuest=toggleQuest; window.deleteQuest=deleteQuest; window.editQuest=editQuest; window.studySubject=studySubject; window.strikeBoss=strikeBoss; window.showPanel=showPanel; window.openModal=openModal; window.closeModal=closeModal; window.closeModalOutside=closeModalOutside; window.confirmModal=confirmModal; window.toggleChip=toggleChip; window.endDay=endDay; window.saveFitness=saveFitness; window.saveProfile=saveProfile; window.saveReminder=saveReminder; window.saveGeminiKey=saveGeminiKey; window.exportData=exportData; window.pushToCloud=pushToCloud; window.signOut=signOut; window.toggleMute=toggleMute; window.updateVolume=updateVolume; window.toggleChat=toggleChat; window.sendChat=sendChat; window.clearChat=clearChat; window.showStreakInfo=showStreakInfo; window.updateSysMsg=updateSysMsg; window.closeLvlUp=closeLvlUp; window.switchAuthMode=switchAuthMode; window.handleAuth=handleAuth; window.saveProfile=saveProfile;
+// Expose globals
+window.completeQuest = completeQuest;
+window.startCountdown = startCountdown;
+window.screwIt = screwIt;
+window.deleteQuest = deleteQuest;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.confirmModal = confirmModal;
+window.sealDay = sealDay;
+window.showPanel = showPanel;
+window.syncToCloud = syncToCloud;
+window.signOut = signOut;
+window.saveGeminiKey = saveGeminiKey;
 </script>
 </body>
 </html>
